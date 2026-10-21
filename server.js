@@ -652,4 +652,22 @@ if (require.main === module) {
   }
 }
 
-module.exports = { createApp };
+let vercelServer;
+
+async function vercelHandler(request, response) {
+  try {
+    if (!vercelServer) vercelServer = createApp();
+    await vercelServer.ready;
+  } catch (error) {
+    console.error("Impossible d’initialiser le chat Fundora :", error);
+    response.statusCode = 500;
+    response.setHeader("Content-Type", "text/plain; charset=utf-8");
+    response.end("Le service Fundora est temporairement indisponible.");
+    return;
+  }
+
+  await vercelServer.handleRequest(request, response);
+}
+
+module.exports = vercelHandler;
+module.exports.createApp = createApp;
