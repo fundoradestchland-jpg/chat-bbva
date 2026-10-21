@@ -49,7 +49,7 @@ function parseMultipart(buffer, contentType) {
   const match = contentType.match(/^\s*multipart\/form-data\s*;\s*boundary=(?:"([^"]+)"|([^;\s]+))/i);
   const boundary = match && (match[1] || match[2]);
   if (!boundary || boundary.length > 70 || !/^[0-9A-Za-z'()+_,\-./:=?]+$/.test(boundary)) {
-    throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+    throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
   }
 
   const delimiter = Buffer.from(`--${boundary}`);
@@ -61,40 +61,40 @@ function parseMultipart(buffer, contentType) {
 
   while (position < buffer.length) {
     if (!buffer.subarray(position, position + delimiter.length).equals(delimiter)) {
-      throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+      throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
     }
     position += delimiter.length;
     if (buffer.subarray(position, position + 2).toString("ascii") === "--") break;
     if (buffer.subarray(position, position + 2).toString("ascii") !== "\r\n") {
-      throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+      throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
     }
     position += 2;
 
     const headerEnd = buffer.indexOf(Buffer.from("\r\n\r\n"), position);
     if (headerEnd < 0) {
-      throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+      throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
     }
     const headers = buffer.subarray(position, headerEnd).toString("utf8");
     const disposition = headers.match(/^content-disposition:\s*form-data\s*;([^\r\n]*)$/im);
     const fieldName = disposition && disposition[1].match(/(?:^|;)\s*name="([^"]*)"/i);
     const fileName = disposition && disposition[1].match(/(?:^|;)\s*filename="([^"]*)"/i);
     if (!fieldName || ++partCount > 3) {
-      throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+      throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
     }
     const contentStart = headerEnd + 4;
     const contentEnd = buffer.indexOf(nextDelimiter, contentStart);
     if (contentEnd < 0) {
-      throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+      throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
     }
     const content = buffer.subarray(contentStart, contentEnd);
     const key = fieldName[1];
 
     if (fileName && fileName[1]) {
       if (key !== "attachment" || attachment) {
-        throw Object.assign(new Error("Un seul fichier peut être envoyé par message."), { status: 400 });
+        throw Object.assign(new Error("Solo se puede enviar un archivo por mensaje."), { status: 400 });
       }
       if (content.length > MAX_ATTACHMENT_BYTES) {
-        throw Object.assign(new Error("Le fichier dépasse la limite de 4 Mo."), { status: 413 });
+        throw Object.assign(new Error("El archivo supera el límite de 4 MB."), { status: 413 });
       }
       const originalName = path.basename(fileName[1].replace(/\\/g, "/"))
         .replace(/[\u0000-\u001f\u007f]/g, "")
@@ -103,7 +103,7 @@ function parseMultipart(buffer, contentType) {
       const extension = path.extname(originalName).toLowerCase();
       const type = ATTACHMENT_TYPES[extension];
       if (!originalName || !type || !type.signature(content)) {
-        throw Object.assign(new Error("Type de fichier non pris en charge ou fichier invalide. Formats acceptés : images JPG, PNG, GIF, WebP, PDF, TXT, DOC et DOCX."), { status: 400 });
+        throw Object.assign(new Error("El tipo de archivo no es compatible o el archivo no es válido. Formatos aceptados: imágenes JPG, PNG, GIF y WebP; documentos PDF, TXT, DOC y DOCX."), { status: 400 });
       }
       attachment = {
         id: crypto.randomUUID(),
@@ -114,7 +114,7 @@ function parseMultipart(buffer, contentType) {
       };
     } else {
       if (!["text", "clientId"].includes(key) || fields.has(key)) {
-        throw Object.assign(new Error("Le formulaire d’envoi de fichier est invalide."), { status: 400 });
+        throw Object.assign(new Error("El formulario de carga del archivo no es válido."), { status: 400 });
       }
       fields.set(key, content.toString("utf8"));
     }
@@ -147,7 +147,7 @@ function createApp(options = {}) {
     data = { users: [], messages: [] };
   }
   if (!Array.isArray(data.users) || !Array.isArray(data.messages)) {
-    throw new Error("Le fichier de données Fundora n'a pas le format attendu.");
+    throw new Error("El archivo de datos de Fundora tiene un formato inesperado.");
   }
 
   function saveData() {
@@ -208,7 +208,7 @@ function createApp(options = {}) {
   function requireRole(request, response, role) {
     const session = getSession(request);
     if (!session || (role && session.role !== role)) {
-      sendError(response, 401, "Veuillez vous connecter pour continuer.");
+      sendError(response, 401, "Inicia sesión para continuar.");
       return null;
     }
     return session;
@@ -233,7 +233,7 @@ function createApp(options = {}) {
       request.on("data", (chunk) => {
         body += chunk;
         if (Buffer.byteLength(body) > MAX_BODY_LENGTH) {
-          reject(Object.assign(new Error("La requête est trop volumineuse."), { status: 413 }));
+          reject(Object.assign(new Error("La solicitud es demasiado grande."), { status: 413 }));
           request.destroy();
         }
       });
@@ -241,7 +241,7 @@ function createApp(options = {}) {
         try {
           resolve(JSON.parse(body || "{}"));
         } catch {
-          reject(Object.assign(new Error("La requête doit contenir un JSON valide."), { status: 400 }));
+          reject(Object.assign(new Error("La solicitud debe contener un JSON válido."), { status: 400 }));
         }
       });
       request.on("error", reject);
@@ -259,7 +259,7 @@ function createApp(options = {}) {
         if (size > MAX_MULTIPART_BYTES) {
           tooLarge = true;
           chunks.length = 0;
-          reject(Object.assign(new Error("Le fichier dépasse la limite de 4 Mo."), { status: 413 }));
+          reject(Object.assign(new Error("El archivo supera el límite de 4 MB."), { status: 413 }));
           request.resume();
           return;
         }
@@ -303,7 +303,7 @@ function createApp(options = {}) {
     if (request.method !== "GET" && request.headers.origin) {
       const origin = new URL(request.headers.origin);
       if (origin.host !== request.headers.host) {
-        return sendError(response, 403, "Origine de la requête non autorisée.");
+        return sendError(response, 403, "El origen de la solicitud no está autorizado.");
       }
     }
 
@@ -320,18 +320,18 @@ function createApp(options = {}) {
 
     if (request.method === "POST" && url.pathname === "/api/register") {
       if (!consumeAttempt(request, "register")) {
-        return sendError(response, 429, "Trop de tentatives. Réessayez dans 15 minutes.");
+        return sendError(response, 429, "Demasiados intentos. Vuelve a probar dentro de 15 minutos.");
       }
       const body = await readBody(request);
       const name = normalizeName(body.name);
       if (name.length < 2 || name.length > 60) {
-        return sendError(response, 400, "Votre nom doit contenir entre 2 et 60 caractères.");
+        return sendError(response, 400, "Tu nombre debe tener entre 2 y 60 caracteres.");
       }
       if (typeof body.password !== "string" || body.password.length < 8 || body.password.length > 128) {
-        return sendError(response, 400, "Choisissez un mot de passe de 8 caractères minimum.");
+        return sendError(response, 400, "Elige una contraseña de al menos 8 caracteres.");
       }
       if (await userByName(name)) {
-        return sendError(response, 409, "Ce nom est déjà utilisé. Choisissez un autre nom.");
+        return sendError(response, 409, "Este nombre ya está en uso. Elige otro.");
       }
       const salt = crypto.randomBytes(16);
       const passwordHash = await scrypt(body.password, salt, PASSWORD_KEY_LENGTH);
@@ -347,7 +347,7 @@ function createApp(options = {}) {
           await store.createUser(user, nameKey(user.name));
         } catch (error) {
           if (error.code === "23505") {
-            return sendError(response, 409, "Ce nom est déjà utilisé. Choisissez un autre nom.");
+            return sendError(response, 409, "Este nombre ya está en uso. Elige otro.");
           }
           throw error;
         }
@@ -361,30 +361,30 @@ function createApp(options = {}) {
 
     if (request.method === "POST" && url.pathname === "/api/login") {
       if (!consumeAttempt(request, "login")) {
-        return sendError(response, 429, "Trop de tentatives. Réessayez dans 15 minutes.");
+        return sendError(response, 429, "Demasiados intentos. Vuelve a probar dentro de 15 minutos.");
       }
       const body = await readBody(request);
       const name = normalizeName(body.name);
       if (typeof body.password !== "string" || !name) {
-        return sendError(response, 400, "Veuillez saisir votre nom et votre mot de passe.");
+        return sendError(response, 400, "Introduce tu nombre y tu contraseña.");
       }
       if (body.role === "staff") {
         if (!staffPasswordHash || nameKey(name) !== nameKey(staffName)) {
-          return sendError(response, 401, "Nom ou mot de passe incorrect.");
+          return sendError(response, 401, "Nombre o contraseña incorrectos.");
         }
         const candidate = await scrypt(body.password, staffSalt, PASSWORD_KEY_LENGTH);
         if (!crypto.timingSafeEqual(candidate, staffPasswordHash)) {
-          return sendError(response, 401, "Nom ou mot de passe incorrect.");
+          return sendError(response, 401, "Nombre o contraseña incorrectos.");
         }
         setSession(response, { role: "staff", name: staffName });
         return sendJson(response, 200, { user: { id: "staff", name: staffName }, role: "staff" });
       }
       const user = await userByName(name);
-      if (!user) return sendError(response, 401, "Nom ou mot de passe incorrect.");
+      if (!user) return sendError(response, 401, "Nombre o contraseña incorrectos.");
       const candidate = await scrypt(body.password, Buffer.from(user.passwordSalt, "hex"), PASSWORD_KEY_LENGTH);
       const expected = Buffer.from(user.passwordHash, "hex");
       if (candidate.length !== expected.length || !crypto.timingSafeEqual(candidate, expected)) {
-        return sendError(response, 401, "Nom ou mot de passe incorrect.");
+        return sendError(response, 401, "Nombre o contraseña incorrectos.");
       }
       setSession(response, { role: "client", userId: user.id });
       return sendJson(response, 200, { user: publicUser(user), role: "client" });
@@ -405,7 +405,7 @@ function createApp(options = {}) {
         const latest = messages[messages.length - 1] || null;
         return {
           client: publicUser(user),
-          lastMessage: latest ? (latest.text || (latest.attachment ? `Pièce jointe : ${latest.attachment.name}` : "")) : "",
+          lastMessage: latest ? (latest.text || (latest.attachment ? `Archivo adjunto: ${latest.attachment.name}` : "")) : "",
           updatedAt: latest ? latest.createdAt : user.createdAt
         };
       });
@@ -418,7 +418,7 @@ function createApp(options = {}) {
       if (!session) return;
       const clientId = session.role === "staff" ? url.searchParams.get("clientId") : session.userId;
       if (session.role === "staff" && !await userById(clientId)) {
-        return sendError(response, 404, "Client introuvable.");
+        return sendError(response, 404, "No se ha encontrado al cliente.");
       }
       const requestedAfter = url.searchParams.get("after") || "";
       const after = UUID_PATTERN.test(requestedAfter) ? requestedAfter : "";
@@ -430,7 +430,7 @@ function createApp(options = {}) {
       if (!session) return;
       const body = await readBody(request);
       const clientId = session.role === "staff" ? body.clientId : session.userId;
-      if (!await userById(clientId)) return sendError(response, 404, "Client introuvable.");
+      if (!await userById(clientId)) return sendError(response, 404, "No se ha encontrado al cliente.");
       if (store) {
         return sendJson(response, 200, await store.markMessagesRead(clientId, session.role));
       }
@@ -450,24 +450,24 @@ function createApp(options = {}) {
       const session = requireRole(request, response);
       if (!session) return;
       const fileId = url.pathname.slice("/api/files/".length);
-      if (!UUID_PATTERN.test(fileId)) return sendError(response, 404, "Fichier introuvable.");
+      if (!UUID_PATTERN.test(fileId)) return sendError(response, 404, "No se ha encontrado el archivo.");
       if (store) {
         const file = await store.getAttachment(fileId);
         if (!file || (session.role === "client" && file.clientId !== session.userId)) {
-          return sendError(response, 404, "Fichier introuvable.");
+          return sendError(response, 404, "No se ha encontrado el archivo.");
         }
         return sendAttachment(response, file.attachment, file.content);
       }
       const message = data.messages.find((item) => item.attachment && item.attachment.id === fileId);
       if (!message || (session.role === "client" && message.clientId !== session.userId)) {
-        return sendError(response, 404, "Fichier introuvable.");
+        return sendError(response, 404, "No se ha encontrado el archivo.");
       }
       const filePath = path.join(attachmentDir, fileId);
       let fileStat;
       try {
         fileStat = fs.statSync(filePath);
       } catch (error) {
-        if (error.code === "ENOENT") return sendError(response, 404, "Fichier introuvable.");
+        if (error.code === "ENOENT") return sendError(response, 404, "No se ha encontrado el archivo.");
         throw error;
       }
       const attachment = message.attachment;
@@ -486,8 +486,8 @@ function createApp(options = {}) {
       });
       const fileStream = fs.createReadStream(filePath);
       fileStream.on("error", (error) => {
-        console.error("Erreur de lecture d’une pièce jointe Fundora :", error);
-        if (!response.headersSent) sendError(response, 500, "Impossible de lire cette pièce jointe.");
+        console.error("Error al leer un archivo adjunto de Fundora:", error);
+        if (!response.headersSent) sendError(response, 500, "No se ha podido leer este archivo adjunto.");
         else response.destroy();
       });
       fileStream.pipe(response);
@@ -507,14 +507,14 @@ function createApp(options = {}) {
       } else if (/^application\/json\b/i.test(contentType)) {
         body = await readBody(request);
       } else {
-        return sendError(response, 415, "Format de message non pris en charge.");
+        return sendError(response, 415, "El formato del mensaje no es compatible.");
       }
       const clientId = session.role === "staff" ? body.clientId : session.userId;
       const clientUser = await userById(clientId);
-      if (!clientUser) return sendError(response, 404, "Client introuvable.");
+      if (!clientUser) return sendError(response, 404, "No se ha encontrado al cliente.");
       const text = typeof body.text === "string" ? body.text.trim() : "";
       if ((!text && !uploadedFile) || text.length > 2000) {
-        return sendError(response, 400, "Écrivez un message ou joignez un fichier. Un message ne peut pas dépasser 2 000 caractères.");
+        return sendError(response, 400, "Escribe un mensaje o adjunta un archivo. El mensaje no puede superar los 2.000 caracteres.");
       }
       if (uploadedFile && !store) {
         fs.mkdirSync(attachmentDir, { recursive: true });
@@ -552,7 +552,7 @@ function createApp(options = {}) {
       return sendJson(response, 201, { message });
     }
 
-    return sendError(response, 404, "Cette adresse n'existe pas.");
+    return sendError(response, 404, "Esta dirección no existe.");
   }
 
   function serveStatic(request, response, url) {
@@ -580,7 +580,7 @@ function createApp(options = {}) {
       content = fs.readFileSync(filePath);
     } catch (error) {
       if (error.code === "ENOENT") {
-        console.error(`Fichier statique Fundora introuvable : ${fileName}`);
+        console.error(`No se ha encontrado el archivo estático de Fundora: ${fileName}`);
         response.writeHead(404);
         response.end("Not found");
         return;
@@ -627,8 +627,8 @@ function createApp(options = {}) {
     } catch (error) {
       if (response.headersSent || response.destroyed) return;
       if (error.status) return sendError(response, error.status, error.message);
-      console.error("Erreur du serveur Fundora :", error);
-      sendError(response, 500, "Une erreur est survenue. Veuillez réessayer.");
+      console.error("Error del servidor de Fundora:", error);
+      sendError(response, 500, "Se ha producido un error. Inténtalo de nuevo.");
     }
   }
 
@@ -636,24 +636,24 @@ function createApp(options = {}) {
   server.handleRequest = handleRequest;
   server.ready = store ? store.initialize(dataFile, attachmentDir) : Promise.resolve();
   server.on("close", () => {
-    if (store) store.close().catch((error) => console.error("Erreur de fermeture PostgreSQL Fundora :", error));
+    if (store) store.close().catch((error) => console.error("Error al cerrar PostgreSQL de Fundora:", error));
   });
   return server;
 }
 
 if (require.main === module) {
   if (!process.env.FUNDORA_STAFF_PASSWORD || process.env.FUNDORA_STAFF_PASSWORD.length < 8) {
-      console.error("Définissez FUNDORA_STAFF_PASSWORD avec au moins 8 caractères avant de lancer le serveur.");
+      console.error("Configura FUNDORA_STAFF_PASSWORD con al menos 8 caracteres antes de iniciar el servidor.");
     process.exitCode = 1;
   } else {
     const server = createApp();
     const port = Number(process.env.PORT) || 3000;
     server.ready.then(() => {
       server.listen(port, () => {
-        console.log(`Chat Fundora disponible sur http://localhost:${port}`);
+        console.log(`Chat Fundora disponible en http://localhost:${port}`);
       });
     }).catch((error) => {
-      console.error("Impossible de démarrer Fundora avec la base PostgreSQL configurée :", error);
+      console.error("No se ha podido iniciar Fundora con la base de datos PostgreSQL configurada:", error);
       server.close();
       process.exitCode = 1;
     });
@@ -667,10 +667,10 @@ async function vercelHandler(request, response) {
     if (!vercelServer) vercelServer = createApp();
     await vercelServer.ready;
   } catch (error) {
-    console.error("Impossible d’initialiser le chat Fundora :", error);
+    console.error("No se ha podido inicializar el chat de Fundora:", error);
     response.statusCode = 500;
     response.setHeader("Content-Type", "text/plain; charset=utf-8");
-    response.end("Le service Fundora est temporairement indisponible.");
+    response.end("El servicio de Fundora no está disponible temporalmente.");
     return;
   }
 

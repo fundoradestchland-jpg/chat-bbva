@@ -314,7 +314,7 @@ test("clients and admin can exchange private images and documents", async () => 
   assert.equal(documentMessage.body.message.attachment.mimeType, "application/pdf");
 
   const conversations = await staff.request("/api/conversations");
-  assert.equal(conversations.body.conversations[0].lastMessage, "Pièce jointe : document.pdf");
+  assert.equal(conversations.body.conversations[0].lastMessage, "Archivo adjunto: document.pdf");
 
   const imageResponse = await fetch(`${baseUrl}/api/files/${imageMessage.body.message.attachment.id}`, {
     headers: { Cookie: client.cookie }

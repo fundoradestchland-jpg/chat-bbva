@@ -196,7 +196,7 @@ function createPostgresStore(connectionString) {
         ORDER BY COALESCE(m.created_at, u.created_at) DESC, u.id`);
       return result.rows.map((row) => ({
         client: { id: row.id, name: row.name },
-        lastMessage: row.last_text || (row.attachment_name ? `Pièce jointe : ${row.attachment_name}` : ""),
+        lastMessage: row.last_text || (row.attachment_name ? `Archivo adjunto: ${row.attachment_name}` : ""),
         updatedAt: new Date(row.last_created_at || row.created_at).toISOString()
       }));
     },

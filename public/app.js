@@ -38,13 +38,13 @@ async function api(url, options = {}) {
   try {
     body = responseText ? JSON.parse(responseText) : {};
   } catch {
-    if (response.status === 413) throw new Error("Fichier trop volumineux. La taille maximale est de 4 Mo.");
-    throw new Error("Le serveur n’a pas pu traiter la requête. Réessayez.");
+    if (response.status === 413) throw new Error("El archivo es demasiado grande. El tamaño máximo es de 4 MB.");
+    throw new Error("El servidor no ha podido procesar la solicitud. Inténtalo de nuevo.");
   }
   if (response.status === 413 && !body.error) {
-    throw new Error("Fichier trop volumineux. La taille maximale est de 4 Mo.");
+    throw new Error("El archivo es demasiado grande. El tamaño máximo es de 4 MB.");
   }
-  if (!response.ok) throw new Error(body.error || "Une erreur est survenue.");
+  if (!response.ok) throw new Error(body.error || "Se ha producido un error.");
   return body;
 }
 
@@ -64,20 +64,20 @@ function updateAuthMode() {
   authError.hidden = true;
   if (staff) {
     isRegistering = false;
-    authTitle.textContent = "Connexion administrateur.";
-    authSubtitle.textContent = "Connectez-vous pour retrouver vos conversations.";
-    authSubmit.querySelector("span:first-child").textContent = "Accéder aux conversations";
+    authTitle.textContent = "Acceso de administración.";
+    authSubtitle.textContent = "Inicia sesión para ver tus conversaciones.";
+    authSubmit.querySelector("span:first-child").textContent = "Ver conversaciones";
     passwordInput.autocomplete = "current-password";
   } else {
-    authTitle.textContent = isRegistering ? "Faisons connaissance." : "Ravi de vous retrouver.";
+    authTitle.textContent = isRegistering ? "¡Encantados de conocerte!" : "Nos alegra verte de nuevo.";
     authSubtitle.textContent = isRegistering
-      ? "Créez votre espace pour échanger avec notre équipe."
-      : "Connectez-vous pour reprendre la conversation.";
-    authSubmit.querySelector("span:first-child").textContent = isRegistering ? "Créer mon espace" : "Me connecter";
+      ? "Crea tu espacio para hablar con nuestro equipo."
+      : "Inicia sesión para retomar la conversación.";
+    authSubmit.querySelector("span:first-child").textContent = isRegistering ? "Crear mi espacio" : "Iniciar sesión";
     passwordInput.autocomplete = isRegistering ? "new-password" : "current-password";
     switchAuth.innerHTML = isRegistering
-      ? 'Déjà un compte ? <button id="switch-auth-button" type="button">Me connecter</button>'
-      : 'Pas encore de compte ? <button id="switch-auth-button" type="button">Créer mon espace</button>';
+      ? '¿Ya tienes una cuenta? <button id="switch-auth-button" type="button">Iniciar sesión</button>'
+      : '¿Aún no tienes una cuenta? <button id="switch-auth-button" type="button">Crear mi espacio</button>';
     document.querySelector("#switch-auth-button").addEventListener("click", () => {
       isRegistering = !isRegistering;
       updateAuthMode();
@@ -97,8 +97,8 @@ staffTab.addEventListener("click", () => {
 document.querySelector("#password-toggle").addEventListener("click", (event) => {
   const visible = passwordInput.type === "password";
   passwordInput.type = visible ? "text" : "password";
-  event.currentTarget.textContent = visible ? "Masquer" : "Afficher";
-  event.currentTarget.setAttribute("aria-label", visible ? "Masquer le mot de passe" : "Afficher le mot de passe");
+  event.currentTarget.textContent = visible ? "Ocultar" : "Mostrar";
+  event.currentTarget.setAttribute("aria-label", visible ? "Ocultar contraseña" : "Mostrar contraseña");
 });
 
 authForm.addEventListener("submit", async (event) => {
@@ -133,15 +133,15 @@ async function logout() {
 
 function formatTime(value) {
   if (!value) return "";
-  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 function formatDay(value) {
-  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" }).format(new Date(value));
 }
 
 function messageFormMarkup(placeholder, buttonLabel) {
-  return `<form class="message-form" id="message-form"><div class="attachment-controls"><label class="attach-button" for="message-attachment"><span aria-hidden="true">＋</span> Joindre un fichier</label><input class="attachment-input" id="message-attachment" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.doc,.docx" aria-label="Joindre une image ou un document"><span class="attachment-name" id="attachment-name">Images et documents · 4 Mo maximum</span></div><textarea id="message-input" maxlength="2000" rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea><span class="message-hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</span><button class="send-button" type="submit"><span>${escapeHtml(buttonLabel)}</span><span aria-hidden="true">→</span></button></form>`;
+  return `<form class="message-form" id="message-form"><div class="attachment-controls"><label class="attach-button" for="message-attachment"><span aria-hidden="true">＋</span> Adjuntar archivo</label><input class="attachment-input" id="message-attachment" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.doc,.docx" aria-label="Adjuntar una imagen o un documento"><span class="attachment-name" id="attachment-name">Imágenes y documentos · Máximo 4 MB</span></div><textarea id="message-input" maxlength="2000" rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea><span class="message-hint">Intro para enviar · Mayús + Intro para saltar de línea</span><button class="send-button" type="submit"><span>${escapeHtml(buttonLabel)}</span><span aria-hidden="true">→</span></button></form>`;
 }
 
 function bindMessageForm(clientId = null) {
@@ -154,7 +154,7 @@ function bindMessageForm(clientId = null) {
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (file && file.size > 4 * 1024 * 1024) {
-      window.alert("Le fichier dépasse la limite de 4 Mo.");
+      window.alert("El archivo supera el tamaño máximo de 4 MB.");
       fileInput.value = "";
       fileName.textContent = defaultFileHint;
       return;
@@ -201,17 +201,17 @@ function bindMessageForm(clientId = null) {
 }
 
 function formatFileSize(size) {
-  if (size < 1024) return `${size} octets`;
+  if (size < 1024) return `${size} bytes`;
   return size < 1024 * 1024
-    ? `${Math.round(size / 1024)} Ko`
-    : `${(size / (1024 * 1024)).toFixed(1)} Mo`;
+    ? `${Math.round(size / 1024)} KB`
+    : `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function renderMessages(messages) {
   const list = document.querySelector("#message-list");
   if (!list) return;
   if (!messages.length && !list.children.length) {
-    list.innerHTML = '<div class="empty-chat"><span class="empty-chat-icon">✳</span><strong>La conversation commence ici.</strong><span>Envoyez votre premier message à l’équipe Fundora.</span></div>';
+    list.innerHTML = '<div class="empty-chat"><span class="empty-chat-icon">✳</span><strong>La conversación empieza aquí.</strong><span>Envía tu primer mensaje al equipo de Fundora.</span></div>';
     return;
   }
   const empty = list.querySelector(".empty-chat");
@@ -224,7 +224,7 @@ function renderMessages(messages) {
     if (existing) {
       const status = existing.querySelector(".message-status");
       if (status) {
-        status.textContent = message.readAt ? "Lu" : "Envoyé";
+        status.textContent = message.readAt ? "Leído" : "Enviado";
         status.classList.toggle("is-read", Boolean(message.readAt));
       }
       latestMessageId = message.id;
@@ -249,7 +249,7 @@ function renderMessages(messages) {
       : "";
     bubble.dataset.messageId = message.id;
     const receipt = message.sender === role
-      ? `<span class="message-status${message.readAt ? " is-read" : ""}">${message.readAt ? "Lu" : "Envoyé"}</span>`
+      ? `<span class="message-status${message.readAt ? " is-read" : ""}">${message.readAt ? "Leído" : "Enviado"}</span>`
       : "";
     bubble.innerHTML = `<span class="message-sender">${escapeHtml(message.senderName)}</span>${message.text ? `<div class="message-bubble">${escapeHtml(message.text).replace(/\n/g, "<br>")}</div>` : ""}${attachmentMarkup}<div class="message-meta"><time>${formatTime(message.createdAt)}</time>${receipt}</div>`;
     const image = bubble.querySelector(".image-attachment img");
@@ -277,9 +277,9 @@ async function refreshClientMessages() {
 function clientWorkspace() {
   app.innerHTML = `
     <section class="workspace">
-      <div class="workspace-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> Votre espace personnel</div><h1>Bonjour, <span>${escapeHtml(currentUser.name.split(" ")[0])}.</span></h1><p>Votre conversation avec l’équipe Fundora, au même endroit.</p></div><button class="logout-button" id="logout">Se déconnecter <span>↗</span></button></div>
-      <section class="chat-card client-chat-card"><div class="chat-header"><div class="team-avatar">F</div><div class="chat-header-copy"><strong>L’équipe Fundora</strong><span><span class="status-dot"></span> Ici pour vous répondre</span></div><span class="private-label"><span>◈</span> Conversation privée</span></div><div class="message-list" id="message-list" aria-live="polite"></div>${messageFormMarkup("Écrivez votre message…", "Envoyer")}</section>
-      <div class="workspace-footnote"><span>◈</span> Vos messages sont privés et visibles uniquement par vous et l’équipe Fundora.</div>
+      <div class="workspace-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> Tu espacio personal</div><h1>Hola, <span>${escapeHtml(currentUser.name.split(" ")[0])}.</span></h1><p>Tu conversación con el equipo de Fundora, siempre a mano.</p></div><button class="logout-button" id="logout">Cerrar sesión <span>↗</span></button></div>
+      <section class="chat-card client-chat-card"><div class="chat-header"><div class="team-avatar">F</div><div class="chat-header-copy"><strong>El equipo de Fundora</strong><span><span class="status-dot"></span> Estamos aquí para responderte</span></div><span class="private-label"><span>◈</span> Conversación privada</span></div><div class="message-list" id="message-list" aria-live="polite"></div>${messageFormMarkup("Escribe tu mensaje…", "Enviar")}</section>
+      <div class="workspace-footnote"><span>◈</span> Tus mensajes son privados y solo tú y el equipo de Fundora pueden verlos.</div>
     </section>`;
   document.querySelector("#logout").addEventListener("click", logout);
   bindMessageForm();
@@ -290,7 +290,7 @@ function clientWorkspace() {
 function showWorkspaceError(error) {
   const list = document.querySelector("#message-list");
   if (list) {
-    list.innerHTML = `<p class="workspace-error">${escapeHtml(error.message)} <button id="retry">Réessayer</button></p>`;
+    list.innerHTML = `<p class="workspace-error">${escapeHtml(error.message)} <button id="retry">Reintentar</button></p>`;
     document.querySelector("#retry").addEventListener("click", () => renderWorkspace());
   }
 }
@@ -299,11 +299,11 @@ async function refreshConversations() {
   const result = await api("/api/conversations");
   const list = document.querySelector("#conversation-list");
   if (!list) return;
-  list.innerHTML = result.conversations.length ? "" : '<div class="no-conversations">Les nouveaux clients apparaîtront ici lorsqu’ils auront créé leur espace.</div>';
+  list.innerHTML = result.conversations.length ? "" : '<div class="no-conversations">Los nuevos clientes aparecerán aquí cuando creen su espacio.</div>';
   for (const conversation of result.conversations) {
     const button = document.createElement("button");
     button.className = `conversation-item ${selectedClientId === conversation.client.id ? "is-selected" : ""}`;
-    button.innerHTML = `<span class="client-avatar">${escapeHtml(conversation.client.name.slice(0, 1).toUpperCase())}</span><span class="conversation-copy"><strong>${escapeHtml(conversation.client.name)}</strong><span>${escapeHtml(conversation.lastMessage || "Nouvelle conversation")}</span></span><time>${formatTime(conversation.updatedAt)}</time>`;
+    button.innerHTML = `<span class="client-avatar">${escapeHtml(conversation.client.name.slice(0, 1).toUpperCase())}</span><span class="conversation-copy"><strong>${escapeHtml(conversation.client.name)}</strong><span>${escapeHtml(conversation.lastMessage || "Nueva conversación")}</span></span><time>${formatTime(conversation.updatedAt)}</time>`;
     button.addEventListener("click", () => {
       selectedClientId = conversation.client.id;
       latestMessageId = "";
@@ -332,16 +332,16 @@ function renderStaffWorkspace() {
   const previouslySelected = selectedClientId;
   app.innerHTML = `
     <section class="workspace staff-workspace">
-      <div class="workspace-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> Espace administrateur</div><h1>La boîte <span>à échanges.</span></h1><p>Retrouvez les conversations de vos clients et répondez-leur.</p></div><button class="logout-button" id="logout">Se déconnecter <span>↗</span></button></div>
-      <section class="inbox-card"><aside class="inbox-sidebar"><div class="inbox-sidebar-heading"><strong>Conversations</strong><span id="conversation-count"></span></div><div class="conversation-list" id="conversation-list"><div class="loading-conversations">Chargement des conversations…</div></div></aside><section class="inbox-chat" id="inbox-chat"></section></section>
-      <div class="workspace-footnote"><span>✳</span> Une réponse attentive fait toute la différence.</div>
+      <div class="workspace-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> Panel de administración</div><h1>Tu bandeja <span>de mensajes.</span></h1><p>Consulta las conversaciones de tus clientes y respóndeles.</p></div><button class="logout-button" id="logout">Cerrar sesión <span>↗</span></button></div>
+      <section class="inbox-card"><aside class="inbox-sidebar"><div class="inbox-sidebar-heading"><strong>Conversaciones</strong><span id="conversation-count"></span></div><div class="conversation-list" id="conversation-list"><div class="loading-conversations">Cargando conversaciones…</div></div></aside><section class="inbox-chat" id="inbox-chat"></section></section>
+      <div class="workspace-footnote"><span>✳</span> Una respuesta atenta puede marcar la diferencia.</div>
     </section>`;
   document.querySelector("#logout").addEventListener("click", logout);
   const inboxChat = document.querySelector("#inbox-chat");
   if (!previouslySelected) {
-    inboxChat.innerHTML = '<div class="inbox-placeholder"><span>✳</span><strong>Choisissez une conversation</strong><p>Sélectionnez un client dans la liste pour afficher ses messages.</p></div>';
+    inboxChat.innerHTML = '<div class="inbox-placeholder"><span>✳</span><strong>Elige una conversación</strong><p>Selecciona un cliente de la lista para ver sus mensajes.</p></div>';
   } else {
-    inboxChat.innerHTML = `<div class="chat-header"><div class="team-avatar">F</div><div class="chat-header-copy"><strong id="selected-client-name">Conversation client</strong><span>Échange privé avec Fundora</span></div></div><div class="message-list" id="message-list" aria-live="polite"></div>${messageFormMarkup("Répondre à votre client…", "Répondre")}`;
+    inboxChat.innerHTML = `<div class="chat-header"><div class="team-avatar">F</div><div class="chat-header-copy"><strong id="selected-client-name">Conversación con el cliente</strong><span>Conversación privada con Fundora</span></div></div><div class="message-list" id="message-list" aria-live="polite"></div>${messageFormMarkup("Responde a tu cliente…", "Responder")}`;
     api("/api/conversations").then(({ conversations }) => {
       const selected = conversations.find((item) => item.client.id === selectedClientId);
       const title = document.querySelector("#selected-client-name");
