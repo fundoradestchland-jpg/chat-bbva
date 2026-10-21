@@ -574,7 +574,20 @@ function createApp(options = {}) {
       "Referrer-Policy": "no-referrer",
       "Content-Security-Policy": "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'"
     });
-    fs.createReadStream(path.join(PUBLIC_DIR, fileName)).pipe(response);
+    const filePath = path.join(PUBLIC_DIR, fileName);
+    let content;
+    try {
+      content = fs.readFileSync(filePath);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.error(`Fichier statique Fundora introuvable : ${fileName}`);
+        response.writeHead(404);
+        response.end("Not found");
+        return;
+      }
+      throw error;
+    }
+    response.end(content);
   }
 
   function sendAttachment(response, attachment, content) {
@@ -594,7 +607,7 @@ function createApp(options = {}) {
     response.end(content);
   }
 
-  const server = http.createServer(async (request, response) => {
+  async function handleRequest(request, response) {
     try {
       if (store) await server.ready;
       const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
@@ -609,7 +622,10 @@ function createApp(options = {}) {
       console.error("Erreur du serveur Fundora :", error);
       sendError(response, 500, "Une erreur est survenue. Veuillez réessayer.");
     }
-  });
+  }
+
+  const server = http.createServer(handleRequest);
+  server.handleRequest = handleRequest;
   server.ready = store ? store.initialize(dataFile, attachmentDir) : Promise.resolve();
   server.on("close", () => {
     if (store) store.close().catch((error) => console.error("Erreur de fermeture PostgreSQL Fundora :", error));

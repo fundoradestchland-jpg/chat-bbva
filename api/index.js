@@ -13,5 +13,5 @@ module.exports = async function handler(request, response) {
     return;
   }
 
-  server.emit("request", request, response);
+  await server.handleRequest(request, response);
 };
