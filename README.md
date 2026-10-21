@@ -1,0 +1,47 @@
+# Chat Fundora
+
+Un premier espace de discussion privé entre les clients et l’équipe Fundora. Les clients créent leur compte avec leur nom et un mot de passe ; l’équipe se connecte séparément pour consulter la boîte de réception et répondre.
+
+## Démarrer sur votre ordinateur
+
+Utilisez Node.js 20 ou une version plus récente. Remplissez d’abord `.env` avec vos secrets locaux, puis lancez depuis ce dossier :
+
+```powershell
+npm start
+```
+
+Ouvrez ensuite [http://localhost:3000](http://localhost:3000). Pour accéder à la boîte de réception, sélectionnez **Admin Fundora** et saisissez **BEN ANT** et **ben@2006** ; ses réponses s’affichent sous le nom **Fundora**. Les clients choisissent **Créer mon espace** une seule fois, puis utilisent ensuite le même nom et le même mot de passe pour retrouver leurs conversations. Un mot de passe incorrect n’ouvre pas leur compte.
+
+Sans `DATABASE_URL`, les comptes et messages restent enregistrés dans `data/fundora.json` et les pièces jointes dans `data/attachments`.
+
+## Connecter PostgreSQL
+
+Dans le fichier `.env` à la racine du projet, configurez `DATABASE_URL` avec l’URL PostgreSQL privée fournie par Neon, ainsi que le mot de passe administrateur :
+
+```dotenv
+DATABASE_URL=collez_ici_votre_url_neon
+FUNDORA_STAFF_NAME=BEN ANT
+FUNDORA_STAFF_PASSWORD=choisissez_un_mot_de_passe_long
+```
+
+Ne partagez pas cette URL et ne la mettez jamais dans le code. Le fichier `.env` est exclu de Git ; remplacez les valeurs vides présentes dans le fichier créé pour vous avant de démarrer. Si le mot de passe de la base contient des caractères réservés à une URL, utilisez l’URL de connexion complète copiée depuis Neon.
+
+Le serveur crée automatiquement ses tables et index au premier démarrage. Si la base est vide et que `data/fundora.json` existe, les comptes, messages, états de lecture et pièces jointes sont importés dans une transaction. Les fichiers locaux restent en place : cette importation ne les supprime pas. Si la base contient déjà des comptes sans historique de migration Fundora, le démarrage s’arrête au lieu d’écraser ou de mélanger les données ; utilisez une base vide pour l’import automatique. Les nouveaux fichiers (jusqu’à 8 Mo) sont stockés dans PostgreSQL, ils ne dépendent donc pas du disque éphémère de l’hébergeur.
+
+Le chargement de `.env` est automatique avec `npm start`. Si la connexion échoue, le serveur affiche l’erreur et ne bascule pas silencieusement vers le stockage JSON.
+
+Les mots de passe des clients sont stockés sous forme de dérivés cryptographiques salés, et non en clair. Le mot de passe de l’équipe est fourni par variable d’environnement et n’est pas enregistré dans ce fichier. Ne publiez aucun mot de passe avec le code.
+
+## Tests
+
+```powershell
+npm test
+```
+
+## Mise en ligne
+
+Déployez le serveur Node.js derrière HTTPS, configurez `FUNDORA_STAFF_PASSWORD` et `DATABASE_URL` comme secrets côté hébergeur, et utilisez une base PostgreSQL gérée. Si vous conservez une sauvegarde de `data/fundora.json`, protégez-en l’accès. N’utilisez pas le serveur de développement comme hébergement de production à grande échelle.
+
+La boîte de réception s’actualise automatiquement toutes les quelques secondes. La connexion utilise un cookie protégé contre l’accès JavaScript, valable jusqu’à sept jours ; comme les sessions vivent en mémoire, un redémarrage du serveur obligera les utilisateurs à se reconnecter.
+
+Les messages affichent **Envoyé** puis **Lu** quand le destinataire consulte la conversation. Un message n’est marqué comme lu que lorsque la conversation est ouverte dans un onglet visible.

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f5f0">
+    <meta name="description" content="Discutez en toute simplicité avec l’équipe Fundora.">
+    <title>Fundora — parlons-en</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Fundora, accueil">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>fundora<span class="brand-period">.</span></span>
+        </a>
+        <div class="topbar-note"><span class="status-dot"></span> Un vrai échange, en toute simplicité</div>
+        <a class="topbar-help" href="mailto:bonjour@fundora.fr">Besoin d’aide ? <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <main id="app">
+        <section class="welcome-layout" aria-labelledby="welcome-title">
+          <div class="welcome-copy">
+            <div class="eyebrow"><span class="eyebrow-line"></span> L’espace de discussion Fundora</div>
+            <h1 id="welcome-title">On est là.<br><span>Parlons-en.</span></h1>
+            <p class="welcome-intro">Une question, une idée, besoin d’un coup de main ? Écrivez-nous. Notre équipe vous répond ici, simplement.</p>
+            <div class="welcome-illustration" aria-hidden="true">
+              <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+              <div class="sun-shape"></div><div class="leaf leaf-one"></div><div class="leaf leaf-two"></div>
+              <div class="message-bubble bubble-back">Une belle journée commence<br>par une bonne conversation.</div>
+              <div class="message-bubble bubble-front"><span class="mini-avatar">F</span><span>Bonjour ! Comment peut-on vous aider ?</span><span class="bubble-time">maintenant</span></div>
+              <div class="sparkle sparkle-one">✳</div><div class="sparkle sparkle-two">✦</div>
+              <div class="illustration-caption">Les bonnes idées commencent par un échange.</div>
+            </div>
+            <div class="trust-note"><span class="lock-icon" aria-hidden="true">◈</span> Vos échanges restent privés et accessibles uniquement à vous et à Fundora.</div>
+          </div>
+
+          <section class="auth-card" aria-labelledby="auth-title">
+            <div class="card-topline"><span class="card-icon" aria-hidden="true">↗</span><span>VOTRE ESPACE PERSONNEL</span></div>
+            <h2 id="auth-title">Ravi de vous retrouver.</h2>
+            <p class="card-subtitle" id="auth-subtitle">Connectez-vous pour reprendre la conversation.</p>
+            <div class="auth-tabs" role="tablist" aria-label="Type de connexion">
+              <button class="auth-tab is-active" id="client-tab" type="button" role="tab" aria-selected="true" data-role="client">Espace client</button>
+              <button class="auth-tab" id="staff-tab" type="button" role="tab" aria-selected="false" data-role="staff">Admin Fundora</button>
+            </div>
+            <form id="auth-form">
+              <label for="name">Votre nom</label>
+              <div class="input-wrap"><span class="input-icon" aria-hidden="true">○</span><input id="name" name="name" autocomplete="username" placeholder="Ex. Camille Martin" required minlength="2" maxlength="60"></div>
+              <div class="label-row"><label for="password">Mot de passe</label><span class="password-hint">8 caractères minimum</span></div>
+              <div class="input-wrap"><span class="input-icon" aria-hidden="true">⌑</span><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Votre mot de passe" required minlength="8" maxlength="128"><button id="password-toggle" class="password-toggle" type="button" aria-label="Afficher le mot de passe">Afficher</button></div>
+              <p class="form-error" id="auth-error" role="alert" hidden></p>
+              <button class="primary-button" id="auth-submit" type="submit"><span>Me connecter</span><span aria-hidden="true">→</span></button>
+            </form>
+            <p class="switch-auth" id="switch-auth">Pas encore de compte ? <button id="switch-auth-button" type="button">Créer mon espace</button></p>
+            <p class="staff-note" id="staff-note" hidden>Connexion réservée à l’administrateur Fundora.</p>
+            <div class="card-footer"><span>Un espace pensé pour des échanges de qualité</span><span aria-hidden="true">✳</span></div>
+          </section>
+        </section>
+      </main>
+      <footer class="site-footer"><span>© 2026 Fundora</span><span>Des échanges qui ont du sens.</span><a href="mailto:bonjour@fundora.fr">Nous contacter</a></footer>
+    </div>
+  </body>
+</html>
