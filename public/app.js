@@ -33,7 +33,17 @@ async function api(url, options = {}) {
     ...options,
     headers
   });
-  const body = await response.json();
+  const responseText = await response.text();
+  let body;
+  try {
+    body = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    if (response.status === 413) throw new Error("Fichier trop volumineux. La taille maximale est de 4 Mo.");
+    throw new Error("Le serveur n’a pas pu traiter la requête. Réessayez.");
+  }
+  if (response.status === 413 && !body.error) {
+    throw new Error("Fichier trop volumineux. La taille maximale est de 4 Mo.");
+  }
   if (!response.ok) throw new Error(body.error || "Une erreur est survenue.");
   return body;
 }
@@ -131,7 +141,7 @@ function formatDay(value) {
 }
 
 function messageFormMarkup(placeholder, buttonLabel) {
-  return `<form class="message-form" id="message-form"><div class="attachment-controls"><label class="attach-button" for="message-attachment"><span aria-hidden="true">＋</span> Joindre un fichier</label><input class="attachment-input" id="message-attachment" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.doc,.docx" aria-label="Joindre une image ou un document"><span class="attachment-name" id="attachment-name">Images et documents · 8 Mo maximum</span></div><textarea id="message-input" maxlength="2000" rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea><span class="message-hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</span><button class="send-button" type="submit"><span>${escapeHtml(buttonLabel)}</span><span aria-hidden="true">→</span></button></form>`;
+  return `<form class="message-form" id="message-form"><div class="attachment-controls"><label class="attach-button" for="message-attachment"><span aria-hidden="true">＋</span> Joindre un fichier</label><input class="attachment-input" id="message-attachment" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.doc,.docx" aria-label="Joindre une image ou un document"><span class="attachment-name" id="attachment-name">Images et documents · 4 Mo maximum</span></div><textarea id="message-input" maxlength="2000" rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}"></textarea><span class="message-hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</span><button class="send-button" type="submit"><span>${escapeHtml(buttonLabel)}</span><span aria-hidden="true">→</span></button></form>`;
 }
 
 function bindMessageForm(clientId = null) {
@@ -143,8 +153,8 @@ function bindMessageForm(clientId = null) {
 
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
-    if (file && file.size > 8 * 1024 * 1024) {
-      window.alert("Le fichier dépasse la limite de 8 Mo.");
+    if (file && file.size > 4 * 1024 * 1024) {
+      window.alert("Le fichier dépasse la limite de 4 Mo.");
       fileInput.value = "";
       fileName.textContent = defaultFileHint;
       return;

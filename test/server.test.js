@@ -346,10 +346,20 @@ test("clients and admin can exchange private images and documents", async () => 
   const unsupported = await client.request("/api/messages", { method: "POST", body: unsupportedForm });
   assert.equal(unsupported.status, 400);
 
+  const maximumSizeForm = new FormData();
+  maximumSizeForm.append(
+    "attachment",
+    new Blob([Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), Buffer.alloc(4 * 1024 * 1024 - 8)])], { type: "image/png" }),
+    "maximum-size.png"
+  );
+  const maximumSize = await client.request("/api/messages", { method: "POST", body: maximumSizeForm });
+  assert.equal(maximumSize.status, 201);
+  assert.equal(maximumSize.body.message.attachment.size, 4 * 1024 * 1024);
+
   const oversizedForm = new FormData();
   oversizedForm.append(
     "attachment",
-    new Blob([new Uint8Array(8 * 1024 * 1024 + 1)], { type: "text/plain" }),
+    new Blob([new Uint8Array(4 * 1024 * 1024 + 1)], { type: "text/plain" }),
     "trop-grand.txt"
   );
   const oversized = await client.request("/api/messages", { method: "POST", body: oversizedForm });

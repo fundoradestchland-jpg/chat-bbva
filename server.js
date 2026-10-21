@@ -10,7 +10,7 @@ const scrypt = promisify(crypto.scrypt);
 const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
 const PASSWORD_KEY_LENGTH = 64;
 const MAX_BODY_LENGTH = 16 * 1024;
-const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 const MAX_MULTIPART_BYTES = MAX_ATTACHMENT_BYTES + 64 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ATTACHMENT_TYPES = {
@@ -94,7 +94,7 @@ function parseMultipart(buffer, contentType) {
         throw Object.assign(new Error("Un seul fichier peut être envoyé par message."), { status: 400 });
       }
       if (content.length > MAX_ATTACHMENT_BYTES) {
-        throw Object.assign(new Error("Le fichier dépasse la limite de 8 Mo."), { status: 413 });
+        throw Object.assign(new Error("Le fichier dépasse la limite de 4 Mo."), { status: 413 });
       }
       const originalName = path.basename(fileName[1].replace(/\\/g, "/"))
         .replace(/[\u0000-\u001f\u007f]/g, "")
@@ -259,7 +259,7 @@ function createApp(options = {}) {
         if (size > MAX_MULTIPART_BYTES) {
           tooLarge = true;
           chunks.length = 0;
-          reject(Object.assign(new Error("Le fichier dépasse la limite de 8 Mo."), { status: 413 }));
+          reject(Object.assign(new Error("Le fichier dépasse la limite de 4 Mo."), { status: 413 }));
           request.resume();
           return;
         }
