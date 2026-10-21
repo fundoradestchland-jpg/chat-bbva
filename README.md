@@ -40,7 +40,9 @@ npm test
 
 ## Mise en ligne
 
-Déployez le serveur Node.js derrière HTTPS, configurez `FUNDORA_STAFF_PASSWORD` et `DATABASE_URL` comme secrets côté hébergeur, et utilisez une base PostgreSQL gérée. Si vous conservez une sauvegarde de `data/fundora.json`, protégez-en l’accès. N’utilisez pas le serveur de développement comme hébergement de production à grande échelle.
+Pour déployer sur Vercel, liez ce dossier du projet à votre dépôt GitHub et importez-le dans Vercel. La configuration `vercel.json` envoie les requêtes à la fonction Node `api/index.js`, qui sert aussi les fichiers de `public/`. Dans **Project Settings → Environment Variables**, ajoutez `DATABASE_URL`, `FUNDORA_STAFF_NAME` et `FUNDORA_STAFF_PASSWORD`, puis redéployez. Ne téléversez pas `.env` : ce fichier contient des secrets et est exclu de Git. Utilisez une base PostgreSQL gérée. Si vous conservez une sauvegarde de `data/fundora.json`, protégez-en l’accès.
+
+Vercel exécute des fonctions sans serveur persistant. Les comptes, messages et pièces jointes sont stockés dans PostgreSQL ; le disque local ne sert pas de stockage durable. Les sessions d’authentification sont actuellement conservées en mémoire et peuvent nécessiter une nouvelle connexion si Vercel traite les requêtes dans une autre instance ou redémarre une fonction. N’utilisez pas le serveur de développement comme hébergement de production à grande échelle.
 
 La boîte de réception s’actualise automatiquement toutes les quelques secondes. La connexion utilise un cookie protégé contre l’accès JavaScript, valable jusqu’à sept jours ; comme les sessions vivent en mémoire, un redémarrage du serveur obligera les utilisateurs à se reconnecter.
 
