@@ -68,6 +68,16 @@ function createPostgresStore(connectionString) {
         read_at timestamptz
       );
       CREATE INDEX IF NOT EXISTS messages_client_created_idx ON messages (client_id, created_at, id);
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        token_hash text PRIMARY KEY,
+        role text NOT NULL CHECK (role IN ('client', 'staff')),
+        user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+        staff_name text,
+        expires_at timestamptz NOT NULL,
+        CHECK ((role = 'client' AND user_id IS NOT NULL AND staff_name IS NULL)
+          OR (role = 'staff' AND user_id IS NULL AND staff_name IS NOT NULL))
+      );
+      CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions (expires_at);
       CREATE TABLE IF NOT EXISTS message_attachments (
         id uuid PRIMARY KEY,
         message_id uuid NOT NULL UNIQUE REFERENCES messages(id) ON DELETE CASCADE,
@@ -178,6 +188,33 @@ function createPostgresStore(connectionString) {
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [user.id, user.name, normalizedName, user.passwordHash, user.passwordSalt, user.createdAt]
       );
+    },
+    async createSession(tokenHash, identity, expiresAt) {
+      await pool.query(
+        `INSERT INTO user_sessions (token_hash, role, user_id, staff_name, expires_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [tokenHash, identity.role, identity.userId || null, identity.role === "staff" ? identity.name : null, expiresAt]
+      );
+    },
+    async getSession(tokenHash, expiresAt) {
+      const result = await pool.query(
+        `UPDATE user_sessions
+         SET expires_at = $2
+         WHERE token_hash = $1 AND expires_at > now()
+         RETURNING role, user_id, staff_name, expires_at`,
+        [tokenHash, expiresAt]
+      );
+      if (!result.rows[0]) return null;
+      const row = result.rows[0];
+      return {
+        role: row.role,
+        ...(row.user_id ? { userId: row.user_id } : {}),
+        ...(row.staff_name ? { name: row.staff_name } : {}),
+        expiresAt: new Date(row.expires_at).getTime()
+      };
+    },
+    async deleteSession(tokenHash) {
+      await pool.query("DELETE FROM user_sessions WHERE token_hash = $1", [tokenHash]);
     },
     async getConversations() {
       const result = await pool.query(`

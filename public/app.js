@@ -31,6 +31,7 @@ async function api(url, options = {}) {
   }
   const response = await fetch(url, {
     ...options,
+    credentials: "same-origin",
     headers
   });
   const responseText = await response.text();

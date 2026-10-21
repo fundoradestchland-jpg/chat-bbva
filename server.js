@@ -173,11 +173,21 @@ function createApp(options = {}) {
     sendJson(response, status, { error: message });
   }
 
-  function getSession(request) {
+  function sessionToken(request) {
     const cookies = (request.headers.cookie || "").split(";").map((part) => part.trim());
     const cookie = cookies.find((part) => part.startsWith("fundora_session="));
-    if (!cookie) return null;
-    const token = cookie.slice("fundora_session=".length);
+    return cookie ? cookie.slice("fundora_session=".length) : null;
+  }
+
+  async function getSession(request) {
+    const token = sessionToken(request);
+    if (!token) return null;
+    if (store) {
+      return store.getSession(
+        crypto.createHash("sha256").update(token).digest("hex"),
+        new Date(Date.now() + SESSION_TTL).toISOString()
+      );
+    }
     const session = sessions.get(token);
     if (!session) return null;
     if (session.expiresAt <= Date.now()) {
@@ -188,9 +198,18 @@ function createApp(options = {}) {
     return session;
   }
 
-  function setSession(response, identity) {
+  async function setSession(response, identity) {
     const token = crypto.randomBytes(32).toString("hex");
-    sessions.set(token, { ...identity, expiresAt: Date.now() + SESSION_TTL });
+    const expiresAt = Date.now() + SESSION_TTL;
+    if (store) {
+      await store.createSession(
+        crypto.createHash("sha256").update(token).digest("hex"),
+        identity,
+        new Date(expiresAt).toISOString()
+      );
+    } else {
+      sessions.set(token, { ...identity, expiresAt });
+    }
     const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
     response.setHeader(
       "Set-Cookie",
@@ -198,15 +217,20 @@ function createApp(options = {}) {
     );
   }
 
-  function clearSession(request, response) {
-    const cookies = (request.headers.cookie || "").split(";").map((part) => part.trim());
-    const cookie = cookies.find((part) => part.startsWith("fundora_session="));
-    if (cookie) sessions.delete(cookie.slice("fundora_session=".length));
+  async function clearSession(request, response) {
+    const token = sessionToken(request);
+    if (token) {
+      if (store) {
+        await store.deleteSession(crypto.createHash("sha256").update(token).digest("hex"));
+      } else {
+        sessions.delete(token);
+      }
+    }
     response.setHeader("Set-Cookie", "fundora_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
   }
 
-  function requireRole(request, response, role) {
-    const session = getSession(request);
+  async function requireRole(request, response, role) {
+    const session = await getSession(request);
     if (!session || (role && session.role !== role)) {
       sendError(response, 401, "Inicia sesión para continuar.");
       return null;
@@ -308,7 +332,7 @@ function createApp(options = {}) {
     }
 
     if (request.method === "GET" && url.pathname === "/api/session") {
-      const session = getSession(request);
+      const session = await getSession(request);
       if (!session) return sendJson(response, 200, { user: null });
       if (session.role === "staff") {
         return sendJson(response, 200, { user: { id: "staff", name: session.name }, role: "staff" });
@@ -355,7 +379,7 @@ function createApp(options = {}) {
         data.users.push(user);
         saveData();
       }
-      setSession(response, { role: "client", userId: user.id });
+      await setSession(response, { role: "client", userId: user.id });
       return sendJson(response, 201, { user: publicUser(user), role: "client" });
     }
 
@@ -376,7 +400,7 @@ function createApp(options = {}) {
         if (!crypto.timingSafeEqual(candidate, staffPasswordHash)) {
           return sendError(response, 401, "Nombre o contraseña incorrectos.");
         }
-        setSession(response, { role: "staff", name: staffName });
+        await setSession(response, { role: "staff", name: staffName });
         return sendJson(response, 200, { user: { id: "staff", name: staffName }, role: "staff" });
       }
       const user = await userByName(name);
@@ -386,17 +410,17 @@ function createApp(options = {}) {
       if (candidate.length !== expected.length || !crypto.timingSafeEqual(candidate, expected)) {
         return sendError(response, 401, "Nombre o contraseña incorrectos.");
       }
-      setSession(response, { role: "client", userId: user.id });
+      await setSession(response, { role: "client", userId: user.id });
       return sendJson(response, 200, { user: publicUser(user), role: "client" });
     }
 
     if (request.method === "POST" && url.pathname === "/api/logout") {
-      clearSession(request, response);
+      await clearSession(request, response);
       return sendJson(response, 200, { ok: true });
     }
 
     if (request.method === "GET" && url.pathname === "/api/conversations") {
-      if (!requireRole(request, response, "staff")) return;
+      if (!await requireRole(request, response, "staff")) return;
       if (store) {
         return sendJson(response, 200, { conversations: await store.getConversations() });
       }
@@ -414,7 +438,7 @@ function createApp(options = {}) {
     }
 
     if (request.method === "GET" && url.pathname === "/api/messages") {
-      const session = requireRole(request, response);
+      const session = await requireRole(request, response);
       if (!session) return;
       const clientId = session.role === "staff" ? url.searchParams.get("clientId") : session.userId;
       if (session.role === "staff" && !await userById(clientId)) {
@@ -426,7 +450,7 @@ function createApp(options = {}) {
     }
 
     if (request.method === "POST" && url.pathname === "/api/messages/read") {
-      const session = requireRole(request, response);
+      const session = await requireRole(request, response);
       if (!session) return;
       const body = await readBody(request);
       const clientId = session.role === "staff" ? body.clientId : session.userId;
@@ -447,7 +471,7 @@ function createApp(options = {}) {
     }
 
     if (request.method === "GET" && /^\/api\/files\/[0-9a-f-]{36}$/i.test(url.pathname)) {
-      const session = requireRole(request, response);
+      const session = await requireRole(request, response);
       if (!session) return;
       const fileId = url.pathname.slice("/api/files/".length);
       if (!UUID_PATTERN.test(fileId)) return sendError(response, 404, "No se ha encontrado el archivo.");
@@ -495,7 +519,7 @@ function createApp(options = {}) {
     }
 
     if (request.method === "POST" && url.pathname === "/api/messages") {
-      const session = requireRole(request, response);
+      const session = await requireRole(request, response);
       if (!session) return;
       const contentType = request.headers["content-type"] || "";
       let body;
