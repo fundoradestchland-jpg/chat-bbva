@@ -607,10 +607,18 @@ function createApp(options = {}) {
     response.end(content);
   }
 
-  async function handleRequest(request, response) {
+  async function handleRequest(request, response, routeOverride) {
     try {
       if (store) await server.ready;
-      const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+      const requestUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+      if (!routeOverride && requestUrl.pathname === "/api/index") {
+        const originalPath = requestUrl.searchParams.get("__fundora_path");
+        if (originalPath && originalPath.startsWith("/") && !originalPath.startsWith("//")) {
+          requestUrl.searchParams.delete("__fundora_path");
+          routeOverride = `${originalPath}${requestUrl.search}`;
+        }
+      }
+      const url = new URL(routeOverride || requestUrl, `http://${request.headers.host || "localhost"}`);
       if (url.pathname.startsWith("/api/")) {
         await handleApi(request, response, url);
       } else {

@@ -135,6 +135,30 @@ test("clients can register, sign in again, and exchange private messages with Fu
   assert.equal(received.body.messages[1].text, "Bonjour Camille, nous sommes là pour vous aider.");
 });
 
+test("Vercel rewrites preserve registration and login API routes", async () => {
+  const client = makeClient();
+  const registration = await client.request(
+    "/api/index?__fundora_path=%2Fapi%2Fregister",
+    {
+      method: "POST",
+      body: JSON.stringify({ name: "Vercel Route Test", password: "vercel-route-pass" })
+    }
+  );
+  assert.equal(registration.status, 201);
+
+  const signedOut = await client.request("/api/logout", { method: "POST", body: "{}" });
+  assert.equal(signedOut.status, 200);
+  const login = await client.request(
+    "/api/index?__fundora_path=%2Fapi%2Flogin",
+    {
+      method: "POST",
+      body: JSON.stringify({ name: "Vercel Route Test", password: "vercel-route-pass" })
+    }
+  );
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.name, "Vercel Route Test");
+});
+
 test("messages stay private, and passwords are not stored in plain text", async () => {
   const file = path.join(directory, "fundora.json");
   const saved = JSON.parse(fs.readFileSync(file, "utf8"));
